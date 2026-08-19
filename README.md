@@ -25,14 +25,28 @@ Recipes that use this shared knowledge (currently `scientific-assistant` and `sw
 
 ## Cross-Machine Sync
 
-Like the individual recipe knowledge bases, this directory is a git repository synced across machines:
+This directory is a git repository, synced independently of the two recipe repos:
+
+- **Repository:** https://github.com/rljacob/goose-shared-knowledge (public)
 
 ```bash
 cd ~/.config/goose/shared-knowledge
 ./sync-knowledge.sh
 ```
 
-See `sync-knowledge.sh` for details. Set up a remote the same way described in each recipe's `SETUP.md` (create a private/public GitHub repo, add as `origin`, push).
+See `sync-knowledge.sh` for details.
+
+### First-time setup on a new machine
+
+```bash
+mkdir -p ~/.config/goose
+cd ~/.config/goose
+git clone https://github.com/rljacob/goose-shared-knowledge.git shared-knowledge
+cd shared-knowledge
+chmod +x sync-knowledge.sh
+```
+
+Do this in addition to cloning `scientific-assistant` and/or `swe-hpc-assistant` - the recipes reference this directory by absolute path (`~/.config/goose/shared-knowledge/machines.md`) and expect it to exist alongside them.
 
 ## Adding More Shared Knowledge
 
