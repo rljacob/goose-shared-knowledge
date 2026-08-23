@@ -12,6 +12,60 @@ Document machine-specific details once here. Both assistants read this file and 
 
 ## Machines
 
+### compute-386-05 (ANL GCE Compute Node)
+
+**Hostname:** `compute-386-05`
+
+**Purpose:**
+- Development, builds, and local small-scale MPI testing
+- Code editing, analysis, and planning
+- Profiling analysis (post-processing)
+
+**Hardware (shared):**
+- CPU: 2× Intel Xeon Gold 6130 @ 2.10GHz (Skylake-SP, stepping 4)
+- Cores: 32 physical cores (16 per socket), 64 logical (HT enabled)
+- NUMA: 2 nodes — node0: cores 0–15, 32–47; node1: cores 16–31, 48–63
+- RAM: ~187 GiB
+- L3 cache: 44 MiB (2× 22 MiB)
+- AVX-512 support: yes (avx512f, avx512dq, avx512bw, avx512vl, avx512cd)
+- Swap: ~2 GiB
+
+**OS (shared):**
+- Ubuntu 22.04.5 LTS (Jammy Jellyfish), kernel 5.15.0-187-generic
+
+**File Locations (shared):**
+- Home: `/home/jacob` (NFS via netapp-386-02a-user.cels.anl.gov, 75 TiB shared pool, 64 TiB avail)
+- Scratch: `/scratch/jacob` (local HDD, 847 GiB total, **only ~25 GiB free — nearly full**)
+- Project storage: `/nfs/gce/projects/` (NFS, various project allocations)
+- Global scratch: `/nfs/gce/globalscratch` (10 TiB, 4.9 TiB avail)
+- Climate project data: `/nfs/gce/projects/climate` (5 TiB, 1.9 TiB avail)
+- Software stack: `/nfs/gce/software` (2 TiB)
+
+**Batch System (shared):**
+- No batch scheduler apparent (interactive compute node, not a login node for a cluster)
+- Node appears to be a shared compute server within ANL GCE environment
+
+**Quirks/Notes (shared):**
+- Scratch (`/scratch`) is 97% full — avoid large temp files there
+- InfiniBand not detected via `lsmod` — standard Ethernet networking likely
+- Multiple users share this node (see `/home/` users: aavarca, cblakely, emconsta, jacob, mcashdollar, rjackson)
+
+#### E3SM / Climate Science Details (scientific-assistant)
+- Cannot run full E3SM cases (not a supported CIME machine, no batch scheduler)
+- Climate project data accessible at `/nfs/gce/projects/climate`
+
+#### Software Engineering / HPC Details (swe-hpc-assistant)
+- Compilers: GCC 11.4.0 (`gcc`, `g++`, `gfortran`) — system default
+- MPI: Open MPI 4.1.2 (`mpirun`, `mpicc`, `mpicxx`, `mpif90`)
+- Key CPU flags: AVX-512 (avx512f/dq/bw/vl/cd), AVX2, FMA — use `-march=skylake-avx512` or `-march=native` to exploit
+- Debuggers: `gdb` (system), `valgrind` (system)
+- Profilers: `perf` (system)
+- No Intel compilers, VTune, or TAU detected at time of recording
+- Recommended compile flags for perf: `-O3 -march=native -funroll-loops`
+- MPI launch: `mpirun` (Open MPI style); for NUMA-aware binding: `mpirun --bind-to core --map-by socket`
+
+---
+
 ### Local Development Machine
 
 **Hostname:** (to be recorded on first use)
@@ -150,6 +204,9 @@ cd ~/.config/goose/shared-knowledge
 ---
 
 ## Update History
+
+### [2026-08-19] Recorded compute-386-05 (ANL GCE)
+Recorded hostname, hardware (2× Xeon Gold 6130, 32 cores, 64 logical, 187 GiB RAM, AVX-512), OS (Ubuntu 22.04.5), compilers (GCC 11.4.0, Open MPI 4.1.2), storage layout, and notable quirks (scratch 97% full, no batch scheduler, no IB).
 
 ### [2026-08-19] Consolidated from per-recipe machines.md files
 Merged `scientific-assistant/knowledge/machines.md` and `swe-hpc-assistant/knowledge/machines.md` into this shared file. Both recipes now reference this file instead of maintaining separate copies.
