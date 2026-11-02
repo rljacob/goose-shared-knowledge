@@ -203,7 +203,24 @@ cd ~/.config/goose/shared-knowledge
 
 ---
 
+## GCP HPC Reference Architecture: MPI+GPU E3SM/SCREAM (Kokkos)
+
+### Software Engineering / HPC Details
+- **GPU VM family**: A3-Mega/A3-Ultra (8x H100, NVLink intra-node) preferred for Kokkos/CUDA + multi-node MPI (SCREAM dycore is memory-bandwidth bound). A2 (A100) is the fallback tier if H100 quota unavailable. G2 (L4) not suitable — no NVLink, no GPUDirect-RDMA multi-node fabric, inference-oriented.
+- **Orchestration**: Cluster Toolkit (formerly HPC Toolkit) + Slurm-GCP recommended over GKE+GPU node pools for traditional MPI/batch codes like E3SM — preserves sbatch/srun semantics E3SM's cime/case.submit scripts expect. Cluster Toolkit ships ready A3-mega+TCPXO+Slurm-GCP blueprints. GKE viable only if team has existing k8s ops investment (needs MPI-operator/Kubeflow-MPI, less mature TCPX integration in pods).
+- **Networking**: GPUDirect-RDMA via TCPX (A3-High) / TCPXO (A3-Mega/Ultra) for near-NVLink inter-node GPU comm; requires NCCL TCPX plugin + specific Cluster Toolkit blueprint OS image/driver versions. Compact placement policies mandatory to colocate VMs on same physical switch/block. Enable Tier-1 networking (gVNIC, up to 200+ Gbps) alongside TCPXO. Use a dedicated rail-optimized VPC subnet for compute, separate from management/login subnet.
+- **Storage layering**: local NVMe SSD (per-node scratch, ephemeral) → Google Cloud Managed Lustre or DDN EXAScaler (shared active-run parallel filesystem, mounted login+compute) → GCS (long-term archival/output, lifecycle-tiered Standard→Nearline/Coldline). Filestore only for home dirs/config, not high-throughput model I/O.
+- **Pipeline components**: login/head node (CPU) → Slurm controller (Cluster Toolkit-deployed) → GPU compute partition (A3-Mega, TCPXO, compact-placed, autoscaled) → shared Lustre PFS → GCS archive → post-processing/viz node or Cloud Batch job (NCO/CDO/E3SM diagnostics).
+- **Identity/networking**: dedicated VPC, private cluster (no public IPs on compute/controller), IAP for SSH to login node + OS Login for IAM-based key mgmt, least-privilege service accounts (compute SA scoped to Lustre/Filestore/specific GCS buckets; separate controller SA for Slurm-GCP resume/suspend instance mgmt), internal-only firewall rules for MPI/NCCL ports.
+
+**Follow-up:** No live GCP cluster provisioned yet as of this entry — this is a planning/architecture-diagram reference, not a verified deployment. Revisit with actual quota, region, and Cluster Toolkit blueprint version once implementation begins.
+
+---
+
 ## Update History
+
+### [2026-08-28] Added GCP HPC reference architecture for MPI+GPU E3SM/SCREAM
+Captured GPU VM family recommendation (A3-Mega/H100 primary, A2 fallback, G2 not suitable), Cluster Toolkit+Slurm-GCP vs GKE tradeoffs, TCPX/TCPXO+compact placement+Tier-1 networking notes, storage layering (NVMe scratch/Managed Lustre/GCS archive), end-to-end pipeline components, and VPC/IAP/service-account identity considerations. Planning-stage reference for an architecture diagram, not yet a deployed/verified cluster.
 
 ### [2026-08-19] Recorded compute-386-05 (ANL GCE)
 Recorded hostname, hardware (2× Xeon Gold 6130, 32 cores, 64 logical, 187 GiB RAM, AVX-512), OS (Ubuntu 22.04.5), compilers (GCC 11.4.0, Open MPI 4.1.2), storage layout, and notable quirks (scratch 97% full, no batch scheduler, no IB).
